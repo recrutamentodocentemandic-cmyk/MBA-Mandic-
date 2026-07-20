@@ -5,7 +5,8 @@ set -e
 cd "$(dirname "$0")"
 [ -f .env ] || cp .env.example .env
 
-current() { grep "^$1=" .env | cut -d= -f2-; }
+# valor atual, ignorando comentário inline e espaços
+current() { grep "^$1=" .env | cut -d= -f2- | sed -E 's/[[:space:]]*#.*//; s/^[[:space:]]+|[[:space:]]+$//g'; }
 
 set_var() {
   local name="$1" prompt="$2" secret="$3" cur val
