@@ -3,6 +3,7 @@ import cron from "node-cron";
 import { config } from "./config.js";
 import "./db.js";
 import { registerShadowMode } from "./shadow.js";
+import { registerMgmtAssistant } from "./mgmt.js";
 import { runReminders, upcomingChecklist } from "./reminders.js";
 import { runWeeklyReport } from "./engagement.js";
 
@@ -19,6 +20,7 @@ bot.command("status", async (ctx) => {
 });
 
 registerShadowMode(bot);
+registerMgmtAssistant(bot);
 
 // Lembretes do checklist — diário 09:00 (América/São Paulo)
 cron.schedule("0 9 * * *", () => void runReminders(bot).catch(logErr), {

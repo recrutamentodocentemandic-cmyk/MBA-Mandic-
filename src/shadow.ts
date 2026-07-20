@@ -92,7 +92,7 @@ async function handleCuratorReply(ctx: Context, text: string) {
 }
 
 export function registerShadowMode(bot: Bot) {
-  bot.on("message:text", async (ctx) => {
+  bot.on("message:text", async (ctx, next) => {
     const chatId = ctx.chat.id;
     const text = ctx.message.text;
 
@@ -111,6 +111,8 @@ export function registerShadowMode(bot: Bot) {
       await handleGroupMessage(bot, ctx, text);
     } else if (chatId === config.curatorChatId && ctx.message.reply_to_message) {
       await handleCuratorReply(ctx, text);
+    } else {
+      await next(); // deixa outros handlers (ex.: assistente da gestão) tratarem
     }
   });
 
