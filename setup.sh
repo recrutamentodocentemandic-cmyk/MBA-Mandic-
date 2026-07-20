@@ -29,7 +29,25 @@ set_var() {
 
 echo "── Configuração do bot do MBA ──"
 set_var TELEGRAM_BOT_TOKEN "Token do bot (@BotFather)" s
+
+# valida o token contra a API do Telegram (getMe)
+TOKEN="$(current TELEGRAM_BOT_TOKEN)"
+if [ -n "$TOKEN" ]; then
+  BOTNAME=$(curl -s "https://api.telegram.org/bot${TOKEN}/getMe" \
+    | sed -n 's/.*"username":"\([^"]*\)".*/\1/p')
+  if [ -n "$BOTNAME" ]; then
+    echo "  ✅ token válido — bot: @$BOTNAME"
+  else
+    echo "  ❌ token INVÁLIDO (cole uma vez só e confira no @BotFather). Rode ./setup.sh de novo."
+  fi
+fi
+
 set_var ANTHROPIC_API_KEY  "Chave da API Anthropic" s
+case "$(current ANTHROPIC_API_KEY)" in
+  sk-ant-*) echo "  ✅ formato da chave Anthropic ok" ;;
+  "") ;;
+  *) echo "  ⚠️ chave Anthropic não começa com sk-ant- — confira (chave da OpenAI não funciona)" ;;
+esac
 echo
 echo "Chat IDs (se ainda não souber, deixe em branco — rode ./setup.sh de novo depois do /chatid):"
 set_var CURATOR_CHAT_ID "Seu chat privado com o bot"
