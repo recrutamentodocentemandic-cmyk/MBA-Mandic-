@@ -1,0 +1,11 @@
+{
+  "_comment": "Datas dos sábados presenciais de cada módulo (YYYY-MM-DD). PREENCHER com o cronograma real da turma 2026. Marcos derivados automaticamente: exercício pré-encontro (quinta anterior), reflexão individual (D+10), atividade em grupo (D+15), demo ao vivo (início do módulo seguinte).",
+  "timezone": "America/Sao_Paulo",
+  "modules": [
+    { "id": "M01", "titulo": "IA como Ferramenta do Gestor", "presencial": "2026-08-15" },
+    { "id": "M02", "titulo": "Gestão Estratégica de IES de Saúde", "presencial": "2026-09-12" },
+    { "id": "M03", "titulo": "Ambiente Regulatório da Educação em Saúde", "presencial": "2026-10-17" },
+    { "id": "M04", "titulo": "O que é um bom líder?", "presencial": "2026-11-14" },
+    { "id": "M05", "titulo": "Gestão de Pessoas e Desenvolvimento", "presencial": "2026-12-12" }
+  ]
+}
