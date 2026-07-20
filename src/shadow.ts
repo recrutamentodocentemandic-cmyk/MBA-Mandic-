@@ -96,8 +96,13 @@ export function registerShadowMode(bot: Bot) {
     const chatId = ctx.chat.id;
     const text = ctx.message.text;
 
-    // Utilitário de setup: em qualquer chat, /chatid revela o ID
-    if (text === "/chatid") {
+    // Utilitário de setup: em qualquer chat, /chatid revela o ID (e loga no servidor)
+    if (text.startsWith("/chatid")) {
+      const label =
+        "title" in ctx.chat && ctx.chat.title
+          ? ctx.chat.title
+          : [ctx.from.first_name, ctx.from.last_name].filter(Boolean).join(" ");
+      console.log(`chatid: ${ctx.chat.type} "${label}" → ${chatId}`);
       await ctx.reply(`chat_id: ${chatId}`);
       return;
     }
