@@ -9,6 +9,14 @@ import { runWeeklyReport } from "./engagement.js";
 
 const bot = new Bot(config.telegramToken);
 
+// trace de entrada: um log por update recebido
+bot.use((ctx, next) => {
+  console.log(
+    `update ${ctx.update.update_id}: chat=${ctx.chat?.id} tipo=${ctx.chat?.type} texto=${ctx.message?.text?.slice(0, 40) ?? "(sem texto)"}`
+  );
+  return next();
+});
+
 bot.command("checklist", async (ctx) => {
   if (ctx.chat.id !== config.mgmtChatId && ctx.chat.id !== config.curatorChatId) return;
   await ctx.reply(`📋 Próximos marcos:\n${upcomingChecklist()}`);

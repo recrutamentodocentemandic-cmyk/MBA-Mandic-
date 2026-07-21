@@ -6,3 +6,4 @@ data/*.db-wal
 data/*.db-shm
 content/**/*.md
 !content/README.md
+knowledge/
