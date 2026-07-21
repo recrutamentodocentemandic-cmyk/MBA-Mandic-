@@ -9,11 +9,21 @@ import { runWeeklyReport } from "./engagement.js";
 
 const bot = new Bot(config.telegramToken);
 
-// trace de entrada: um log por update recebido
+// trace de entrada: um log por update recebido, com o tipo de conteúdo
 bot.use((ctx, next) => {
-  console.log(
-    `update ${ctx.update.update_id}: chat=${ctx.chat?.id} tipo=${ctx.chat?.type} texto=${ctx.message?.text?.slice(0, 40) ?? "(sem texto)"}`
-  );
+  const m = ctx.message;
+  const kind = m?.text
+    ? `texto=${m.text.slice(0, 40)}`
+    : m?.document
+      ? `documento=${m.document.file_name}`
+      : m?.photo
+        ? "foto (comprimida — enviar como Arquivo para indexar)"
+        : m?.new_chat_members
+          ? "serviço: membro entrou"
+          : m?.left_chat_member
+            ? "serviço: membro saiu"
+            : "(outro)";
+  console.log(`update ${ctx.update.update_id}: chat=${ctx.chat?.id} ${kind}`);
   return next();
 });
 
