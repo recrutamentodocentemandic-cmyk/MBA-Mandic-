@@ -1,15 +1,12 @@
-// Assistente conversacional no grupo de gestão: responde a menções ao bot e a
-// replies de mensagens dele, com contexto de calendário, checklist e engajamento.
-// Os crons (lembretes/relatórios) seguem independentes.
-import Anthropic from "@anthropic-ai/sdk";
+// Grupo de gestão: menções e replies ao bot vão para o agente Hermes — MBA
+// (loop agêntico com ferramentas, ver src/agent.ts e HERMES.md). Arquivos
+// enviados no grupo viram base de conhecimento. Crons seguem independentes.
 import { Bot, Context } from "grammy";
 import { DateTime } from "luxon";
 import { config } from "./config.js";
 import { db } from "./db.js";
-import { upcomingChecklist } from "./reminders.js";
-import { retrieveKnowledge, saveTelegramFile, listKnowledgeFiles } from "./knowledge.js";
-
-const client = new Anthropic({ apiKey: config.anthropicApiKey });
+import { saveTelegramFile, listKnowledgeFiles } from "./knowledge.js";
+import { agentReply } from "./agent.js";
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS mgmt_log (
@@ -30,48 +27,6 @@ function recentLog(limit = 20): string {
     .reverse()
     .map((r) => `${r.author}: ${r.text}`)
     .join("\n");
-}
-
-function engagementSnapshot(): string {
-  if (!config.groupChatId) return "Grupo dos alunos ainda não conectado.";
-  const weekAgo = DateTime.now().setZone(config.timezone).minus({ days: 7 }).toISO();
-  const row = db
-    .prepare(
-      `SELECT COUNT(DISTINCT user_id) AS ativos, COUNT(*) AS msgs, SUM(is_substantive) AS subst
-       FROM messages WHERE chat_id = ? AND ts >= ?`
-    )
-    .get(config.groupChatId, weekAgo) as { ativos: number; msgs: number; subst: number };
-  return `Últimos 7 dias no grupo dos alunos: ${row.ativos} alunos ativos, ${row.msgs} mensagens (${row.subst ?? 0} substantivas).`;
-}
-
-const SYSTEM = `Você é o assistente do time de gestão do MBA em Gestão Educacional em Saúde com IA da São Leopoldo Mandic (turma 2026). Você conversa num grupo de Telegram com o time de gestão do curso.
-
-Seu papel: apoiar a operação do curso — checklist e prazos de cada módulo, engajamento dos alunos, dúvidas sobre o funcionamento do programa (Termo de Compromisso, sistema de avaliação, demos dos agentes, projeto final) e o que mais o time precisar discutir.
-
-Contexto do programa: alunos leem 1 livro por disciplina antes do presencial, assistem 4 aulas online, entregam exercício pré-encontro até quinta anterior, participam do sábado presencial (08h-17h, 1x/mês), entregam reflexão individual em D+10 e atividade em grupo em D+15, com demo ao vivo do agente no módulo seguinte. Avaliação: reflexão 40%, agente do grupo 60%.
-
-Estilo: português brasileiro, denso e direto, sem cerimônia. Respostas curtas — é um grupo de trabalho, não um relatório. Se não souber algo ou o dado não estiver no contexto, diga claramente. Se pedirem algo que exige ação fora do Telegram (mudar calendário, aprovar conteúdo), diga o que você faria e quem precisa decidir.`;
-
-async function reply(question: string, author: string): Promise<string> {
-  const docs = retrieveKnowledge(question);
-  const docsBlock =
-    docs.length > 0
-      ? docs.map((d) => `<doc arquivo="${d.file}">\n${d.text}\n</doc>`).join("\n")
-      : "(nenhum documento relevante na base)";
-  const context =
-    `<checklist_proximos_marcos>\n${upcomingChecklist(10)}\n</checklist_proximos_marcos>\n` +
-    `<engajamento>\n${engagementSnapshot()}\n</engajamento>\n` +
-    `<documentos_da_gestao>\n${docsBlock}\n</documentos_da_gestao>\n` +
-    `<conversa_recente>\n${recentLog()}\n</conversa_recente>`;
-
-  const response = await client.messages.create({
-    model: config.answerModel,
-    max_tokens: 1024,
-    system: SYSTEM,
-    messages: [{ role: "user", content: `${context}\n\n${author} disse: "${question}"` }],
-  });
-  const block = response.content.find((b) => b.type === "text");
-  return block && block.type === "text" ? block.text : "Não consegui formular resposta agora.";
 }
 
 export function registerMgmtAssistant(bot: Bot) {
@@ -123,7 +78,7 @@ export function registerMgmtAssistant(bot: Bot) {
       if (!mentioned && !repliedToBot) return;
 
       const question = text.replace(`@${ctx.me.username}`, "").trim();
-      const answer = await reply(question, author);
+      const answer = await agentReply(question, author, recentLog());
       logMsg.run(DateTime.now().setZone(config.timezone).toISO(), "bot", answer);
       await ctx.reply(answer, { reply_parameters: { message_id: ctx.message!.message_id } });
       console.log(`mgmt: resposta a ${author}`);

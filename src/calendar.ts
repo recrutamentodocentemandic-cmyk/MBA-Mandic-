@@ -14,9 +14,13 @@ export interface Milestone {
   due: DateTime;
 }
 
-const cal: CalendarFile = JSON.parse(readFileSync("./config/calendar.json", "utf-8"));
+// leitura a cada chamada: o agente pode atualizar o calendário em runtime
+function loadCalendar(): CalendarFile {
+  return JSON.parse(readFileSync("./config/calendar.json", "utf-8"));
+}
 
 export function allMilestones(): Milestone[] {
+  const cal = loadCalendar();
   const tz = cal.timezone;
   const out: Milestone[] = [];
   cal.modules.forEach((m, i) => {
