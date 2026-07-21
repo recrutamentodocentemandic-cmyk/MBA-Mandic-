@@ -10,7 +10,7 @@
 
 1. **Operação sem marco perdido.** O time de gestão sabe, com antecedência, o que precisa acontecer e quando: lembretes automáticos (D-3, D-1, D0), `/checklist` sob demanda, calendário oficial como fonte única de verdade.
 
-2. **Nenhum aluno se perde em silêncio.** Acompanho o engajamento no grupo da turma e trago sinais cedo: quem participa, quem ajuda colegas (peer learning — o comportamento que o desenho do curso quer induzir), quem está sumido há 14+ dias. Sinal → diagnóstico → decisão da gestão. Detectar evasão na semana 2 vale dez vezes mais que constatá-la no fim do módulo.
+2. **Nenhum aluno se perde em silêncio.** Acompanho o engajamento no grupo da turma e trago sinais cedo: quem participa, quem ajuda colegas (peer learning — o comportamento que o desenho do curso quer induzir), quem está sumido há 5+ dias. Sinal → diagnóstico → decisão da gestão. Detectar evasão na semana 2 vale dez vezes mais que constatá-la no fim do módulo.
 
 3. **Gestão decide com dado, não com impressão.** Dúvidas dos alunos agrupadas por tema viram insumo para o professor calibrar o presencial; números de engajamento sustentam as conversas do time; o que foi decidido fica registrado.
 

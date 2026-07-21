@@ -40,7 +40,7 @@ export async function runWeeklyReport(bot: Bot) {
     .all(config.groupChatId) as LastSeenRow[];
 
   const silent = lastSeen.filter(
-    (r) => DateTime.fromISO(r.last_ts) < now.minus({ days: 14 })
+    (r) => DateTime.fromISO(r.last_ts) < now.minus({ days: 5 })
   );
 
   const top = weekly
@@ -53,7 +53,7 @@ export async function runWeeklyReport(bot: Bot) {
 
   const silentBlock =
     silent.length > 0
-      ? `\n\n🔕 Sem participação há 14+ dias (checar antes que vire evasão — diagnóstico antes de intervenção):\n` +
+      ? `\n\n🔕 Sem participação há 5+ dias (checar antes que vire evasão — diagnóstico antes de intervenção):\n` +
         silent.map((s) => `• ${s.user_name} (última: ${DateTime.fromISO(s.last_ts).toFormat("dd/LL")})`).join("\n")
       : "\n\n🔕 Nenhum aluno em silêncio prolongado.";
 
