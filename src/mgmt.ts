@@ -7,6 +7,7 @@ import { config } from "./config.js";
 import { db } from "./db.js";
 import { saveTelegramFile, listKnowledgeFiles } from "./knowledge.js";
 import { agentReply } from "./agent.js";
+import { handleCurationReply } from "./shadow.js";
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS mgmt_log (
@@ -75,6 +76,10 @@ export function registerMgmtAssistant(bot: Bot) {
       const mentioned = text.toLowerCase().includes(`@${ctx.me.username.toLowerCase()}`);
       const repliedToBot = ctx.message!.reply_to_message?.from?.id === ctx.me.id;
       console.log(`mgmt: msg de ${author} (menção=${mentioned}, reply=${repliedToBot})`);
+
+      // reply a uma proposta de curadoria = correção, não conversa com o agente
+      if (repliedToBot && (await handleCurationReply(ctx, text))) return;
+
       if (!mentioned && !repliedToBot) return;
 
       const question = text.replace(`@${ctx.me.username}`, "").trim();

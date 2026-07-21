@@ -40,9 +40,10 @@ async function handleGroupMessage(bot: Bot, ctx: Context, text: string) {
   if (!isSubstantive(text)) return;
 
   const cls = await classify(text);
-  if (!cls || (cls.tipo !== "duvida_conteudo" && cls.tipo !== "pedido_de_entrega")) return;
+  const tiposTratados = ["duvida_conteudo", "pedido_de_entrega", "logistica"];
+  if (!cls || !tiposTratados.includes(cls.tipo)) return;
 
-  const draft = await draftAnswer(name, text);
+  const draft = await draftAnswer(name, text, cls.tipo);
   if (!draft) return;
 
   const info = insertAnswer.run(
@@ -57,38 +58,44 @@ async function handleGroupMessage(bot: Bot, ctx: Context, text: string) {
   const answerId = Number(info.lastInsertRowid);
 
   const kb = new InlineKeyboard()
-    .text("✅ Boa", `fb:boa:${answerId}`)
-    .text("❌ Ruim", `fb:ruim:${answerId}`)
+    .text("✅ Enviar aos alunos", `post:${answerId}`)
+    .text("❌ Descartar", `fb:ruim:${answerId}`)
     .row()
-    .text("📤 Postar estímulo no grupo", `post:${answerId}`);
+    .text("👍 Boa (sem postar)", `fb:boa:${answerId}`);
 
-  const flag =
-    cls.tipo === "pedido_de_entrega"
-      ? "\n⚠️ Classificada como pedido de entrega — resposta em modo andaime."
-      : "";
+  const tipoLabel: Record<string, string> = {
+    duvida_conteudo: "dúvida de conteúdo",
+    pedido_de_entrega: "⚠️ pedido de entrega — resposta em modo andaime",
+    logistica: "dúvida operacional — validar a informação antes de enviar",
+  };
+  // curadoria no grupo de gestão (regra vigente até a 2ª/3ª disciplina)
+  const curationChat = config.mgmtChatId || config.curatorChatId;
   await bot.api.sendMessage(
-    config.curatorChatId,
-    `🎓 Dúvida de ${name}:${flag}\n\n"${text}"\n\n` +
-      `📝 Resposta técnica proposta:\n${draft.resposta_tecnica}\n\n` +
+    curationChat,
+    `🎓 Dúvida de ${name} (${tipoLabel[cls.tipo]}):\n\n"${text}"\n\n` +
+      `📝 Resposta técnica (uso interno):\n${draft.resposta_tecnica}\n\n` +
       `📚 Fontes: ${draft.fontes || "nenhuma no material indexado"}\n\n` +
-      `💬 Estímulo proposto para o grupo:\n${draft.estimulo_grupo}\n\n` +
+      `💬 Proposta de resposta aos alunos:\n${draft.estimulo_grupo}\n\n` +
       `Para corrigir: responda esta mensagem com o texto da correção.`,
     { reply_markup: kb }
   );
-  console.log(`shadow: dúvida de ${name} → DM curador (answer ${answerId})`);
+  console.log(`shadow: dúvida de ${name} (${cls.tipo}) → curadoria no grupo de gestão (answer ${answerId})`);
 }
 
-async function handleCuratorReply(ctx: Context, text: string) {
+// Correção de proposta via reply — funciona no grupo de gestão e no privado do
+// curador. Retorna true se a mensagem era uma correção (e foi tratada).
+export async function handleCurationReply(ctx: Context, text: string): Promise<boolean> {
   const replied = ctx.message?.reply_to_message?.text ?? "";
-  const match = replied.match(/Dúvida de (.+?):/);
-  if (!match) return;
+  const match = replied.match(/Dúvida de (.+?)[(:]/);
+  if (!match) return false;
   const row = db
     .prepare(`SELECT id FROM answers WHERE student_name = ? ORDER BY id DESC LIMIT 1`)
-    .get(match[1]) as { id: number } | undefined;
-  if (!row) return;
+    .get(match[1].trim()) as { id: number } | undefined;
+  if (!row) return false;
   db.prepare(`UPDATE answers SET feedback = 'ruim', correction = ? WHERE id = ?`).run(text, row.id);
   await ctx.reply(`Correção registrada para a resposta ${row.id}. Entra no few-shot das próximas.`);
   console.log(`correction: answer ${row.id}`);
+  return true;
 }
 
 export function registerShadowMode(bot: Bot) {
@@ -110,7 +117,7 @@ export function registerShadowMode(bot: Bot) {
     if (chatId === config.groupChatId) {
       await handleGroupMessage(bot, ctx, text);
     } else if (chatId === config.curatorChatId && ctx.message.reply_to_message) {
-      await handleCuratorReply(ctx, text);
+      await handleCurationReply(ctx, text);
     } else {
       await next(); // deixa outros handlers (ex.: assistente da gestão) tratarem
     }

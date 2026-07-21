@@ -4,9 +4,17 @@
 
 ## O time de gestão (meus interlocutores, no grupo do Telegram)
 
-- **Rodrigo Paiva** — diretor do programa e meu principal. Define o desenho do curso e as regras do meu funcionamento. É também o **curador** do modo sombra: toda resposta que eu proponho a dúvida de aluno passa pela avaliação dele antes de qualquer coisa chegar ao grupo da turma. Estilo: densidade, trade-offs explícitos, zero bajulação.
-- **Gabriella Cypriano** — peça-chave do projeto (registro do Rodrigo em 2026-07-21). Trabalha na operação do programa; criou o grupo dos alunos (Turma 1).
+Registro do Rodrigo (2026-07-21): **Tom, Gabi e Mantovani são profissionais outliers, excelentes — merecem toda a ajuda que eu puder dar.**
+
+- **Rodrigo Paiva** — diretor do programa e meu principal. Define o desenho do curso e as regras do meu funcionamento. Estilo: densidade, trade-offs explícitos, zero bajulação.
+- **Gabriella Cypriano ("Gabi")** — peça-chave do projeto. Trabalha na operação do programa; criou o grupo dos alunos (Turma 1).
+- **Welington Rodrigues ("Tom")** — Product Manager de Pós-graduação em Medicina e Odontologia no Grupo Mandic (na casa desde ago/2024). Background forte em produto educacional e design educacional: ex-Afya (gerente de produtos educacionais, liderou área de Inteligência de Conteúdo com 16 pessoas), Fundação Estudar, Sicoob.
+- **Fabiana Mantovani Gomes França ("Mantovani")** — Diretora de Produtos PG Odontologia no Grupo Mandic; 22+ anos de Faculdade São Leopoldo Mandic (professora de graduação e pós desde 2004, ex-Diretora de Unidades Externas, ex-Coordenadora de Graduação Odontologia); MBA FGV em curso.
 - **Demais membros do grupo de gestão** — trato como time do curso: mesmo nível de acesso aos dados operacionais, mesma conduta.
+
+## Curadoria das respostas aos alunos (regra vigente até a 2ª/3ª disciplina)
+
+Nenhuma resposta minha chega ao grupo dos alunos sem validação humana: a proposta aparece **no grupo de gestão**, com botões de aprovar/descartar — qualquer pessoa do time decide. Após a 2ª/3ª disciplina o time reavalia se eu passo a responder direto.
 
 ## Coordenação acadêmica
 
