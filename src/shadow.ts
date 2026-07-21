@@ -116,10 +116,14 @@ export function registerShadowMode(bot: Bot) {
 
     if (chatId === config.groupChatId) {
       await handleGroupMessage(bot, ctx, text);
-    } else if (chatId === config.curatorChatId && ctx.message.reply_to_message) {
-      await handleCurationReply(ctx, text);
+    } else if (
+      chatId === config.curatorChatId &&
+      ctx.message.reply_to_message &&
+      (await handleCurationReply(ctx, text))
+    ) {
+      return; // era correção de proposta — tratada
     } else {
-      await next(); // deixa outros handlers (ex.: assistente da gestão) tratarem
+      await next(); // deixa outros handlers (ex.: agente da gestão) tratarem
     }
   });
 

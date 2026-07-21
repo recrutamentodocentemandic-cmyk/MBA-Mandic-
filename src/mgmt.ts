@@ -66,19 +66,23 @@ export function registerMgmtAssistant(bot: Bot) {
   });
 
   bot.on("message:text").filter(
-    (ctx) => ctx.chat.id === config.mgmtChatId,
+    (ctx) =>
+      ctx.chat.id === config.mgmtChatId || ctx.chat.id === config.curatorChatId,
     async (ctx: Context) => {
       const text = ctx.message!.text!;
       if (text.startsWith("/")) return; // comandos seguem o fluxo normal
+      const isPrivate = ctx.chat!.id === config.curatorChatId;
       const author = [ctx.from!.first_name, ctx.from!.last_name].filter(Boolean).join(" ");
       logMsg.run(DateTime.now().setZone(config.timezone).toISO(), author, text);
 
-      // acorda por @menção ou pelo nome "Hermes" (o time o chama assim)
+      // no grupo: acorda por @menção, pelo nome "Hermes" ou reply;
+      // no privado do curador: responde a tudo
       const mentioned =
+        isPrivate ||
         text.toLowerCase().includes(`@${ctx.me.username.toLowerCase()}`) ||
         /\bhermes\b/i.test(text);
       const repliedToBot = ctx.message!.reply_to_message?.from?.id === ctx.me.id;
-      console.log(`mgmt: msg de ${author} (menção=${mentioned}, reply=${repliedToBot})`);
+      console.log(`mgmt: msg de ${author} (privado=${isPrivate}, menção=${mentioned}, reply=${repliedToBot})`);
 
       // reply a uma proposta de curadoria = correção, não conversa com o agente
       if (repliedToBot && (await handleCurationReply(ctx, text))) return;
