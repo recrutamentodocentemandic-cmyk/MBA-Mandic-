@@ -12,8 +12,8 @@ Três funções, em fases:
 
 ## Roteamento de modelos
 
-- `claude-haiku-4-5` — classificação de mensagens (barato, alto volume)
-- `claude-sonnet-5` — geração de respostas técnicas
+- `gpt-5-mini` — classificação de mensagens (barato, alto volume)
+- `gpt-5.1` — respostas técnicas e agente da gestão (function calling)
 
 ## Guardrails pedagógicos
 

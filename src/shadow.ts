@@ -5,7 +5,7 @@ import { Bot, Context, InlineKeyboard } from "grammy";
 import { DateTime } from "luxon";
 import { config } from "./config.js";
 import { db } from "./db.js";
-import { classify, draftAnswer } from "./claude.js";
+import { classify, draftAnswer } from "./llm.js";
 
 const insertMessage = db.prepare(
   `INSERT INTO messages (tg_message_id, chat_id, user_id, user_name, ts, char_count, is_reply, is_substantive)

@@ -42,11 +42,11 @@ if [ -n "$TOKEN" ]; then
   fi
 fi
 
-set_var ANTHROPIC_API_KEY  "Chave da API Anthropic" s
-case "$(current ANTHROPIC_API_KEY)" in
-  sk-ant-*) echo "  ✅ formato da chave Anthropic ok" ;;
+set_var OPENAI_API_KEY  "Chave da API OpenAI" s
+case "$(current OPENAI_API_KEY)" in
+  sk-*) echo "  ✅ formato da chave OpenAI ok" ;;
   "") ;;
-  *) echo "  ⚠️ chave Anthropic não começa com sk-ant- — confira (chave da OpenAI não funciona)" ;;
+  *) echo "  ⚠️ chave OpenAI não começa com sk- — confira" ;;
 esac
 echo
 echo "Chat IDs (se ainda não souber, deixe em branco — rode ./setup.sh de novo depois do /chatid):"

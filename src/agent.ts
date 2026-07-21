@@ -1,7 +1,7 @@
-// Agente da gestão (Hermes — MBA): loop agêntico com ferramentas sobre o
-// mesmo Sonnet. Identidade em HERMES.md; escritas restritas a calendário e
-// notas; SQL somente leitura.
-import Anthropic from "@anthropic-ai/sdk";
+// Agente da gestão (Hermes — MBA): loop agêntico com ferramentas via API da
+// OpenAI (function calling). Identidade em HERMES.md; escritas restritas a
+// calendário e notas; SQL somente leitura.
+import OpenAI from "openai";
 import Database from "better-sqlite3";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -10,8 +10,8 @@ import { config } from "./config.js";
 import { db } from "./db.js";
 import { upcomingChecklist } from "./reminders.js";
 import { listKnowledgeFiles } from "./knowledge.js";
+import { openai } from "./llm.js";
 
-const client = new Anthropic({ apiKey: config.anthropicApiKey });
 const roDb = new Database(config.dbPath, { readonly: true, fileMustExist: true });
 
 db.exec(`
@@ -33,7 +33,13 @@ const SCHEMA_DOC = `Tabelas disponíveis (SQLite):
 - notes: notas salvas pelo agente — created_at, author, titulo, conteudo
 - reminders_sent: lembretes já enviados — key, sent_at`;
 
-const tools: Anthropic.Tool[] = [
+interface ToolDef {
+  name: string;
+  description: string;
+  input_schema: Record<string, unknown>;
+}
+
+const toolDefs: ToolDef[] = [
   {
     name: "consultar_banco",
     description: `Executa uma consulta SQL SOMENTE LEITURA (SELECT) no banco do bot. Use para qualquer número sobre engajamento dos alunos, dúvidas, curadoria ou histórico. ${SCHEMA_DOC}`,
@@ -170,6 +176,11 @@ async function execute(name: string, input: unknown, author: string): Promise<st
   }
 }
 
+const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = toolDefs.map((t) => ({
+  type: "function",
+  function: { name: t.name, description: t.description, parameters: t.input_schema },
+}));
+
 const MAX_STEPS = 8;
 
 export async function agentReply(question: string, author: string, recentLog: string): Promise<string> {
@@ -179,44 +190,40 @@ export async function agentReply(question: string, author: string, recentLog: st
     `<checklist_proximos_marcos>\n${upcomingChecklist(10)}\n</checklist_proximos_marcos>\n` +
     `<conversa_recente_do_grupo>\n${recentLog}\n</conversa_recente_do_grupo>`;
 
-  const messages: Anthropic.MessageParam[] = [
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: "system", content: system },
     { role: "user", content: `${author} disse no grupo de gestão:\n"${question}"` },
   ];
 
   for (let step = 0; step < MAX_STEPS; step++) {
-    const response = await client.messages.create({
+    const response = await openai.chat.completions.create({
       model: config.answerModel,
-      max_tokens: 2048,
-      system,
+      max_completion_tokens: 2048,
       tools,
       messages,
     });
 
-    if (response.stop_reason === "tool_use") {
-      messages.push({ role: "assistant", content: response.content });
-      const results: Anthropic.ToolResultBlockParam[] = [];
-      for (const block of response.content) {
-        if (block.type !== "tool_use") continue;
+    const msg = response.choices[0]?.message;
+    if (!msg) return "Não consegui formular resposta.";
+
+    if (msg.tool_calls && msg.tool_calls.length > 0) {
+      messages.push(msg);
+      for (const tc of msg.tool_calls) {
+        if (tc.type !== "function") continue;
+        let out: string;
         try {
-          const out = await execute(block.name, block.input, author);
-          console.log(`agente: ${block.name} ok`);
-          results.push({ type: "tool_result", tool_use_id: block.id, content: out });
+          out = await execute(tc.function.name, JSON.parse(tc.function.arguments || "{}"), author);
+          console.log(`agente: ${tc.function.name} ok`);
         } catch (err) {
-          console.log(`agente: ${block.name} ERRO: ${String(err)}`);
-          results.push({
-            type: "tool_result",
-            tool_use_id: block.id,
-            content: `Erro: ${err instanceof Error ? err.message : String(err)}`,
-            is_error: true,
-          });
+          out = `Erro: ${err instanceof Error ? err.message : String(err)}`;
+          console.log(`agente: ${tc.function.name} ERRO: ${String(err)}`);
         }
+        messages.push({ role: "tool", tool_call_id: tc.id, content: out });
       }
-      messages.push({ role: "user", content: results });
       continue;
     }
 
-    const text = response.content.find((b) => b.type === "text");
-    return text && text.type === "text" ? text.text : "Não consegui formular resposta.";
+    return msg.content ?? "Não consegui formular resposta.";
   }
   return "Passei do limite de passos sem concluir — reformule ou divida o pedido.";
 }

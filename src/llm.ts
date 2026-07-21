@@ -1,11 +1,23 @@
-import Anthropic from "@anthropic-ai/sdk";
+// Camada de LLM (API da OpenAI): classificação de mensagens (modelo mini) e
+// geração de respostas do modo sombra (modelo principal). O loop agêntico da
+// gestão está em agent.ts.
+import OpenAI from "openai";
 import { config } from "./config.js";
 import { db } from "./db.js";
 import { retrieve } from "./content.js";
 
-const client = new Anthropic({ apiKey: config.anthropicApiKey });
+export const openai = new OpenAI({ apiKey: config.openaiApiKey });
 
-// ---------- Classificação (Haiku) ----------
+function parseJson<T>(content: string | null | undefined): T | null {
+  if (!content) return null;
+  try {
+    return JSON.parse(content) as T;
+  } catch {
+    return null;
+  }
+}
+
+// ---------- Classificação (modelo mini) ----------
 
 export interface Classification {
   tipo: "duvida_conteudo" | "logistica" | "pedido_de_entrega" | "conversa";
@@ -13,17 +25,24 @@ export interface Classification {
 }
 
 export async function classify(text: string): Promise<Classification | null> {
-  const response = await client.messages.create({
+  const response = await openai.chat.completions.create({
     model: config.classifierModel,
-    max_tokens: 256,
-    system:
-      "Você classifica mensagens do grupo de alunos de um MBA em gestão educacional em saúde com IA. " +
-      "Tipos: duvida_conteudo (pergunta sobre teoria/conteúdo do curso), logistica (datas, prazos, plataforma), " +
-      "pedido_de_entrega (o aluno pede que façam a entrega/reflexão/exercício por ele), conversa (social, sem pergunta).",
-    messages: [{ role: "user", content: text }],
-    output_config: {
-      format: {
-        type: "json_schema",
+    max_completion_tokens: 512,
+    messages: [
+      {
+        role: "system",
+        content:
+          "Você classifica mensagens do grupo de alunos de um MBA em gestão educacional em saúde com IA. " +
+          "Tipos: duvida_conteudo (pergunta sobre teoria/conteúdo do curso), logistica (datas, prazos, plataforma), " +
+          "pedido_de_entrega (o aluno pede que façam a entrega/reflexão/exercício por ele), conversa (social, sem pergunta).",
+      },
+      { role: "user", content: text },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "classificacao",
+        strict: true,
         schema: {
           type: "object",
           properties: {
@@ -39,16 +58,10 @@ export async function classify(text: string): Promise<Classification | null> {
       },
     },
   });
-  const block = response.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") return null;
-  try {
-    return JSON.parse(block.text) as Classification;
-  } catch {
-    return null;
-  }
+  return parseJson<Classification>(response.choices[0]?.message.content);
 }
 
-// ---------- Geração de resposta (Sonnet) ----------
+// ---------- Geração de resposta do modo sombra (modelo principal) ----------
 
 export interface DraftAnswer {
   resposta_tecnica: string;
@@ -102,19 +115,21 @@ export async function draftAnswer(
           .join("\n")
       : "(nenhum trecho relevante encontrado no material indexado)";
 
-  const response = await client.messages.create({
+  const response = await openai.chat.completions.create({
     model: config.answerModel,
-    max_tokens: 2048,
-    system: ANSWER_SYSTEM + feedbackExamples(),
+    max_completion_tokens: 2048,
     messages: [
+      { role: "system", content: ANSWER_SYSTEM + feedbackExamples() },
       {
         role: "user",
         content: `<conteudo>\n${contentBlock}\n</conteudo>\n\nAluno ${studentName} perguntou no grupo:\n"${question}"`,
       },
     ],
-    output_config: {
-      format: {
-        type: "json_schema",
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "resposta_sombra",
+        strict: true,
         schema: {
           type: "object",
           properties: {
@@ -131,11 +146,5 @@ export async function draftAnswer(
       },
     },
   });
-  const block = response.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") return null;
-  try {
-    return JSON.parse(block.text) as DraftAnswer;
-  } catch {
-    return null;
-  }
+  return parseJson<DraftAnswer>(response.choices[0]?.message.content);
 }
