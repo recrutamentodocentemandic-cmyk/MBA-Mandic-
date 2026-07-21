@@ -43,11 +43,17 @@ if [ -n "$TOKEN" ]; then
 fi
 
 set_var OPENAI_API_KEY  "Chave da API OpenAI" s
-case "$(current OPENAI_API_KEY)" in
-  sk-*) echo "  ✅ formato da chave OpenAI ok" ;;
-  "") ;;
-  *) echo "  ⚠️ chave OpenAI não começa com sk- — confira" ;;
-esac
+
+# valida a chave contra a API da OpenAI
+OAKEY="$(current OPENAI_API_KEY)"
+if [ -n "$OAKEY" ]; then
+  HTTP=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $OAKEY" https://api.openai.com/v1/models)
+  if [ "$HTTP" = "200" ]; then
+    echo "  ✅ chave OpenAI válida"
+  else
+    echo "  ❌ chave OpenAI INVÁLIDA (HTTP $HTTP) — cole uma vez só e rode ./setup.sh de novo"
+  fi
+fi
 echo
 echo "Chat IDs (se ainda não souber, deixe em branco — rode ./setup.sh de novo depois do /chatid):"
 set_var CURATOR_CHAT_ID "Seu chat privado com o bot"
