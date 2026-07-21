@@ -24,7 +24,10 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 `);
 
-const HERMES = readFileSync("./HERMES.md", "utf-8");
+// Sistema operacional do agente: 4 camadas em hermes/, na ordem canônica
+const HERMES = ["IDENTIDADE", "CONDUTA", "MISSAO", "PRINCIPAIS"]
+  .map((f) => readFileSync(`./hermes/${f}.md`, "utf-8"))
+  .join("\n\n---\n\n");
 
 const SCHEMA_DOC = `Tabelas disponíveis (SQLite):
 - messages: mensagens do grupo dos ALUNOS — user_id, user_name, ts (ISO 8601), char_count, is_reply (0/1, respondeu colega), is_substantive (0/1), chat_id
