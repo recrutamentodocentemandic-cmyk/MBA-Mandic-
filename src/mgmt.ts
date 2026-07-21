@@ -30,6 +30,12 @@ function recentLog(limit = 20): string {
     .join("\n");
 }
 
+// Continuidade conversacional no grupo: depois que o agente responde a alguém,
+// as mensagens seguintes dessa pessoa (por 5 min) continuam a conversa sem
+// precisar repetir o nome.
+const FOLLOWUP_MS = 5 * 60 * 1000;
+let lastGroupReply: { userId: number; at: number } | null = null;
+
 export function registerMgmtAssistant(bot: Bot) {
   // Arquivos enviados no grupo de gestão viram base de conhecimento do agente
   bot.on("message:document").filter(
@@ -75,14 +81,22 @@ export function registerMgmtAssistant(bot: Bot) {
       const author = [ctx.from!.first_name, ctx.from!.last_name].filter(Boolean).join(" ");
       logMsg.run(DateTime.now().setZone(config.timezone).toISO(), author, text);
 
-      // no grupo: acorda por @menção, pelo nome "Hermes" ou reply;
+      // no grupo: acorda por @menção, pelo nome "Hermes", reply, ou como
+      // continuação (follow-up de quem ele acabou de responder, janela de 5 min);
       // no privado do curador: responde a tudo
+      const followup =
+        lastGroupReply !== null &&
+        ctx.from!.id === lastGroupReply.userId &&
+        Date.now() - lastGroupReply.at < FOLLOWUP_MS;
       const mentioned =
         isPrivate ||
         text.toLowerCase().includes(`@${ctx.me.username.toLowerCase()}`) ||
-        /\bhermes\b/i.test(text);
+        /\bhermes\b/i.test(text) ||
+        followup;
       const repliedToBot = ctx.message!.reply_to_message?.from?.id === ctx.me.id;
-      console.log(`mgmt: msg de ${author} (privado=${isPrivate}, menção=${mentioned}, reply=${repliedToBot})`);
+      console.log(
+        `mgmt: msg de ${author} (privado=${isPrivate}, menção=${mentioned}, followup=${followup}, reply=${repliedToBot})`
+      );
 
       // reply a uma proposta de curadoria = correção, não conversa com o agente
       if (repliedToBot && (await handleCurationReply(ctx, text))) return;
@@ -93,6 +107,7 @@ export function registerMgmtAssistant(bot: Bot) {
       const answer = await agentReply(question, author, recentLog());
       logMsg.run(DateTime.now().setZone(config.timezone).toISO(), "bot", answer);
       await ctx.reply(answer, { reply_parameters: { message_id: ctx.message!.message_id } });
+      if (!isPrivate) lastGroupReply = { userId: ctx.from!.id, at: Date.now() };
       console.log(`mgmt: resposta a ${author}`);
     }
   );
