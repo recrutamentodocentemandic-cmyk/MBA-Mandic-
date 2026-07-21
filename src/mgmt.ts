@@ -73,7 +73,10 @@ export function registerMgmtAssistant(bot: Bot) {
       const author = [ctx.from!.first_name, ctx.from!.last_name].filter(Boolean).join(" ");
       logMsg.run(DateTime.now().setZone(config.timezone).toISO(), author, text);
 
-      const mentioned = text.toLowerCase().includes(`@${ctx.me.username.toLowerCase()}`);
+      // acorda por @menção ou pelo nome "Hermes" (o time o chama assim)
+      const mentioned =
+        text.toLowerCase().includes(`@${ctx.me.username.toLowerCase()}`) ||
+        /\bhermes\b/i.test(text);
       const repliedToBot = ctx.message!.reply_to_message?.from?.id === ctx.me.id;
       console.log(`mgmt: msg de ${author} (menção=${mentioned}, reply=${repliedToBot})`);
 
