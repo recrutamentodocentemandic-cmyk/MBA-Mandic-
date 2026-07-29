@@ -187,9 +187,13 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = toolDefs.map((t) => 
 const MAX_STEPS = 8;
 
 export async function agentReply(question: string, author: string, recentLog: string): Promise<string> {
+  const groupStatus = config.groupChatId
+    ? "Grupo dos alunos: CONECTADO — dados de engajamento em `messages` são reais."
+    : "Grupo dos alunos: ⚠️ NÃO CONECTADO. A tabela `messages` está vazia POR ISSO — nunca interprete como falta de engajamento da turma. Se perguntarem sobre atividade dos alunos, explique que você ainda não foi adicionado ao grupo da Turma 1 e que um admin precisa te adicionar (@MBAMandicbot) e enviar /chatid lá dentro.";
   const system =
     `${HERMES}\n\n## Estado atual\n` +
     `Data/hora: ${DateTime.now().setZone(config.timezone).toFormat("cccc, dd/LL/yyyy HH:mm", { locale: "pt-BR" })}\n` +
+    `${groupStatus}\n` +
     `<checklist_proximos_marcos>\n${upcomingChecklist(10)}\n</checklist_proximos_marcos>\n` +
     `<conversa_recente_do_grupo>\n${recentLog}\n</conversa_recente_do_grupo>`;
 
