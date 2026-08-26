@@ -39,3 +39,12 @@ CREATE TABLE IF NOT EXISTS reminders_sent (
   sent_at TEXT NOT NULL
 );
 `);
+
+// Migração aditiva (2026-08-26): guardar o TEXTO das mensagens do grupo dos
+// alunos — exigência da IDENTIDADE ("registrar todas as interações"); antes
+// só metadados eram gravados e conteúdo como as respostas ao Zeca se perdia.
+try {
+  db.exec(`ALTER TABLE messages ADD COLUMN text TEXT`);
+} catch {
+  // coluna já existe
+}

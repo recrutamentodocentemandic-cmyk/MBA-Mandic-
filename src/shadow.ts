@@ -8,8 +8,8 @@ import { db } from "./db.js";
 import { classify, draftAnswer } from "./llm.js";
 
 const insertMessage = db.prepare(
-  `INSERT INTO messages (tg_message_id, chat_id, user_id, user_name, ts, char_count, is_reply, is_substantive)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  `INSERT INTO messages (tg_message_id, chat_id, user_id, user_name, ts, char_count, is_reply, is_substantive, text)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 );
 
 const insertAnswer = db.prepare(
@@ -34,7 +34,8 @@ async function handleGroupMessage(bot: Bot, ctx: Context, text: string) {
     DateTime.now().setZone(config.timezone).toISO(),
     text.length,
     msg.reply_to_message ? 1 : 0,
-    isSubstantive(text) ? 1 : 0
+    isSubstantive(text) ? 1 : 0,
+    text.slice(0, 8000)
   );
 
   if (!isSubstantive(text)) return;

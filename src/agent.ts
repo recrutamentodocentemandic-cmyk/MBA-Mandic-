@@ -30,7 +30,7 @@ const HERMES = ["IDENTIDADE", "CONDUTA", "MISSAO", "PRINCIPAIS"]
   .join("\n\n---\n\n");
 
 const SCHEMA_DOC = `Tabelas disponíveis (SQLite):
-- messages: mensagens do grupo dos ALUNOS — user_id, user_name, ts (ISO 8601), char_count, is_reply (0/1, respondeu colega), is_substantive (0/1), chat_id
+- messages: mensagens do grupo dos ALUNOS — user_id, user_name, ts (ISO 8601), char_count, is_reply (0/1, respondeu colega), is_substantive (0/1), chat_id, text (conteúdo da mensagem; NULL nas gravadas antes de 2026-08-26)
 - answers: dúvidas detectadas e curadoria — student_name, question, technical_answer, group_nudge, sources, feedback ('boa'/'ruim'/NULL), correction, posted_to_group, created_at
 - mgmt_log: conversa do grupo de gestão — ts, author, text
 - notes: notas salvas pelo agente — created_at, author, titulo, conteudo
